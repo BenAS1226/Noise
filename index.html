@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<head>
+    <title>Perlin noise</title>
+</head>
+<body>
+    <style>
+        .centerbox {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+    
+        body, html {
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+        }
+    </style>
+    <div class='centerbox'>
+        <canvas id="map"></canvas>
+    </div>
+    <script src='perlin.js'></script>
+    <script>
+        function HSVtoRGB(h, s, v)
+        {
+            var r, g, b, i, f, p, q, t
+            if (arguments.length === 1) {
+                s = h.s, v = h.v, h = h.h
+            }
+            i = Math.floor(h * 6)
+            f = h * 6 - i
+            p = v * (1 - s)
+            q = v * (1 - f * s)
+            t = v * (1 - (1 - f) * s)
+            switch (i % 6) {
+                case 0: r = v, g = t, b = p; break;
+                case 1: r = q, g = v, b = p; break;
+                case 2: r = p, g = v, b = t; break;
+                case 3: r = p, g = q, b = v; break;
+                case 4: r = t, g = p, b = v; break;
+                case 5: r = v, g = p, b = q; break;
+            }
+            return {
+                r: Math.round(r * 255),
+                g: Math.round(g * 255),
+                b: Math.round(b * 255)
+            }
+        }
+        var canvas = document.getElementById("map")
+    
+        var ctx = canvas.getContext("2d")
+        var res = 5
+    
+        canvas.width = screen.width * 2
+        canvas.height = screen.height * 1.01
+    
+        var width = Math.ceil(canvas.width / res)
+        var height = Math.ceil(canvas.height / res)
+    
+        var image = new Image(width, height)
+        image.src = "./rodeo-beach.jpg"
+        var bgData = []
+        image.onload = function(){
+            ctx.drawImage(image, 0, 0)
+            var image = ctx.getImageData(0, 0, width, height);
+            var bgData = image.data
+            alert(bgData)
+        }
+        
+        var image = ctx.createImageData(width, height)
+        var data = image.data
+    
+        var start = Date.now()
+    
+        var scale = 500 / res
+        var octaves = 4
+        var persistance = .5
+        var lacunarity = 2.5
+    
+        noise.seed(Math.random())
+        function update()
+        {
+            var time = (Date.now() - start) / 10000
+            for (var x = 0; x < width; x++) {
+                for (var y = 0; y < height; y++) {
+    
+                    var amplitude = 1
+                    var frequency = 1
+                    var noiseHeight = 0
+                    for (var o = 0; o < octaves; o++) {
+                        var sampleX = x / scale * frequency
+                        var sampleY = y / scale * frequency
+    
+                        var value = Math.abs(noise.simplex3(sampleX, sampleY, time))
+                        noiseHeight += value * amplitude
+    
+                        amplitude *= persistance
+                        frequency *= lacunarity
+                    }
+    
+                    var cell = (x + y * width) * 4
+    
+                    try
+                    {
+                        bgRgb = {
+                            r: bgData[cell + 0],
+                            g: bgData[cell + 1],
+                            b: bgData[cell + 2],
+                            a: bgData[cell + 3]
+                        }
+                    }
+                    catch (e)
+                    {
+                        //alert(e)
+                    }
+
+                    var mid = .5//(1 + Math.sin(time * 10)) / 2
+    
+                    var h = (noiseHeight + time / 100) % 1
+                    //var v = 2 * (Math.abs(Math.round(noiseHeight) - noiseHeight))
+                    var v = Math.abs(mid - noiseHeight) / mid
+                    var rgb = HSVtoRGB(h, 1, v)
+    
+                    data[cell + 0] = rgb.r// + bgRgb.r
+                    data[cell + 1] = rgb.g// + bgRgb.g
+                    data[cell + 2] = rgb.b// + bgRgb.b
+                    data[cell + 3] = 255
+                }
+            }
+            ctx.putImageData(image, 0, 0)
+            ctx.scale(res, res)
+            ctx.drawImage(canvas, 0, 0)
+            ctx.scale(1 / res, 1 / res)
+            requestAnimationFrame(update)
+        }
+        requestAnimationFrame(update)//*/
+    </script>
+</body>
